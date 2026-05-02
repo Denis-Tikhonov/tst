@@ -8,9 +8,9 @@
 
   const VERSION = '7.0.0';
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // STRATEGY DEFINITIONS
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   const STRATEGY_DEFS = [
     { id:'S1',  name:'VIDEO_RULES',    block:1, desc:'video_url / video_alt_url / setVideoUrlHigh / file:mp4' },
     { id:'S2',  name:'direct_mp4',     block:1, desc:'Direct https://...mp4 URLs in page' },
@@ -42,9 +42,9 @@
     { id:'S28', name:'API_endpoint',   block:4, desc:'/api/...video endpoint — headless only' },
   ];
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // SELECTORS
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   const RANKED_CARD_SELECTORS = [
     '.video-block', '.video-item', 'div.thumb_main', '.thumb',
     '.thumb-item', '.item', 'article.video', '.video-thumb',
@@ -63,9 +63,9 @@
   ];
   const THUMB_ATTRS = ['src', 'data-src', 'data-original', 'data-lazy', 'data-thumb', 'data-image'];
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // NETWORK LAYER
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   const NetworkLayer = (() => {
     const PUBLIC_PROXIES = [
       url => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
@@ -94,7 +94,7 @@
     function updateCorsIndicator(status) {
       const el = document.getElementById('corsIndicator');
       if (!el) return;
-      const map = { ok:'🟢 CORS OK', worker:'🟡 Worker', proxy:'🟠 Public proxy', fail:'🔴 Fail' };
+      const map = { ok:'[OK] CORS', worker:'[W] Worker', proxy:'[P] Proxy', fail:'[X] Fail' };
       el.textContent = map[status] || status;
       el.className = 'cors-indicator cors-' + status;
     }
@@ -194,9 +194,9 @@
     return { fetchPage, getWorkerUrl, getLog: () => [..._log] };
   })();
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // UTILITIES
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function absoluteUrl(href, base) {
     if (!href) return null;
     try { return new URL(href, base).href; } catch { return null; }
@@ -215,9 +215,9 @@
     return /^https?:\/\//i.test(s);
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // STRATEGY DETECTION (S1 – S28)
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function detectAllStrategies(html, allJS, base) {
     const combined = html + '\n' + allJS.join('\n');
     const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -599,9 +599,9 @@
     return map[id] || 'Try alternative strategies from same block';
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // KVS ENGINE DETECTION
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function detectKvsEngine(html, allJS) {
     const combined = html + '\n' + allJS.join('\n');
     const markers = {
@@ -662,9 +662,9 @@
     return result;
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // CARD DETECTION
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function detectCards(doc, base) {
     let bestSelector = null, bestCount = 0, bestCards = [];
 
@@ -742,9 +742,9 @@
     return `${tag}${cls}${attr}` || tag;
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // CATEGORIES + SEARCH + BUILD URL
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function detectCategories(doc, base) {
     const selectors = [
       'nav a[href]', '.categories a', '.cats a', '.nav-links a',
@@ -813,9 +813,9 @@
     };
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // PROTECTION DETECTION
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function detectProtection(html, doc) {
     const cf = /cf-ray|__cf_bm|cf_clearance|challenge-form|cloudflare/i.test(html);
     const ageGateEl = doc.querySelector('#age_check, .age-gate, [class*="age-gate"], [id*="age"]');
@@ -831,9 +831,9 @@
     };
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // CDN PATTERN + MIRRORS
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function detectCdnPattern(domains) {
     const groups = new Map();
     for (const d of domains) {
@@ -883,9 +883,9 @@
     return { mirrors: [...mirrors], totalFound: mirrors.size };
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // WORKER VERDICT
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function assessWorkerNecessity(protection, redirectChain, kvsEngine) {
     const reasons = [];
     let mode = 'none';
@@ -918,9 +918,9 @@
     return { required, mode, reasons, summary };
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // MAIN ANALYZE FUNCTION
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   async function analyze(catalogUrl, videoUrl, options = {}) {
     const onProgress = options.onProgress || (() => {});
     const result = {
@@ -1062,9 +1062,9 @@
     return { menuJson, domainMap, workerWhitelist };
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // ARCHITECTURE RENDERER (genArch)
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   function genArch(data) {
     const blocks = [];
 
@@ -1075,12 +1075,12 @@
     blocks.push(`
       <div class="arch-block">
         <div class="arch-header">
-          <span class="arch-icon">🃏</span>
+          <span class="arch-icon">&#x1F0CF;</span>
           <span class="arch-title">Карточки видео</span>
           <span class="arch-badge badge-${cardStatus}">${data.CARD.totalFound} найдено</span>
         </div>
         ${cardWarn.length ? `<div class="hint-block ${cardStatus === 'err' ? 'error' : ''}">
-          ${cardWarn.map(w => `<div class="hint-line">⚠️ ${w.code} (${w.severity})</div>`).join('')}
+          ${cardWarn.map(w => `<div class="hint-line">&#x26A0;&#xFE0F; ${w.code} (${w.severity})</div>`).join('')}
           ${cardStatus === 'err' ? `<div class="hint-action">
             <span>Попробуйте другой URL:</span>
             <input id="altUrl" placeholder="/videos/ · /most-popular/ · /latest-updates/" class="hint-input">
@@ -1098,7 +1098,7 @@
           <div class="sample-cards">
             ${data.CARD.sampleCards.slice(0, 3).map(c => `
               <div class="sample-card">
-                ${c.thumb ? `<img src="${_esc(c.thumb)}" class="sample-thumb" loading="lazy" onerror="this.style.display='none'">` : '<div class="sample-thumb-placeholder">🎬</div>'}
+                ${c.thumb ? `<img src="${_esc(c.thumb)}" class="sample-thumb" loading="lazy" onerror="this.style.display='none'">` : '<div class="sample-thumb-placeholder">&#x1F3AC;</div>'}
                 <div class="sample-info">
                   <div class="sample-title">${_esc(c.title || '—')}</div>
                   <div class="sample-meta">${_esc(c.duration || '')}${c.link ? ` · <a href="${_esc(c.link)}" target="_blank" class="sample-link">↗</a>` : ''}</div>
@@ -1111,14 +1111,14 @@
     blocks.push(`
       <div class="arch-block">
         <div class="arch-header">
-          <span class="arch-icon">📂</span>
+          <span class="arch-icon">&#x1F4C2;</span>
           <span class="arch-title">Категории</span>
           <span class="arch-badge badge-${data.CATEGORIES.length ? 'ok' : 'warn'}">${data.CATEGORIES.length}</span>
         </div>
         ${!data.CATEGORIES.length ? `<div class="hint-block">
           <span>Категории не найдены. Загрузите страницу категорий:</span>
           <input id="catUrl" placeholder="${data.HOST}/categories/" class="hint-input">
-          <button onclick="SiteAnalyzer._loadCategories()" class="btn-sm">📂 Загрузить</button>
+          <button onclick="SiteAnalyzer._loadCategories()" class="btn-sm">&#x1F4C2; Загрузить</button>
         </div>` : `
         <div class="cat-list">
           ${data.CATEGORIES.slice(0, 20).map(c => `<span class="cat-tag">${_esc(c.title)}</span>`).join('')}
@@ -1129,7 +1129,7 @@
     // ── Search + Build URL ──
     blocks.push(`
       <div class="arch-block">
-        <div class="arch-header"><span class="arch-icon">🔍</span><span class="arch-title">Поиск и URL</span></div>
+        <div class="arch-header"><span class="arch-icon">&#x1F50D;</span><span class="arch-title">Поиск и URL</span></div>
         <div class="kv-grid">
           ${_kv('Поиск', `<code>${_esc(data.SEARCH?.pattern || '—')}</code> <span class="badge badge-${data.SEARCH?.type === 'slug' ? 'warn' : 'ok'}">${data.SEARCH?.type || '—'}</span>`)}
           ${_kv('Главная', `<code>${_esc(data.BUILD_URL?.main || '/')}</code>`)}
@@ -1144,7 +1144,7 @@
       blocks.push(`
         <div class="arch-block">
           <div class="arch-header">
-            <span class="arch-icon">🎯</span>
+            <span class="arch-icon">&#x1F3AF;</span>
             <span class="arch-title">Стратегии (S1–S25)</span>
             <span class="arch-badge badge-ok">${data.strategySummary.confirmed} confirmed</span>
             ${data.strategySummary.detected ? `<span class="arch-badge badge-warn">${data.strategySummary.detected} detected</span>` : ''}
@@ -1164,7 +1164,7 @@
           </table>
           ${data.DEAD_STRATEGIES?.length ? `
             <details class="dead-details">
-              <summary>💀 Мёртвые стратегии (${data.DEAD_STRATEGIES.length})</summary>
+              <summary>&#x1F480; Мёртвые стратегии (${data.DEAD_STRATEGIES.length})</summary>
               ${data.DEAD_STRATEGIES.map(d => `<div class="dead-item"><code>${d.id}</code> — ${_esc(d.evidence)} · <small>${_esc(d.suggestion)}</small></div>`).join('')}
             </details>` : ''}
         </div>`);
@@ -1176,7 +1176,7 @@
       blocks.push(`
         <div class="arch-block">
           <div class="arch-header">
-            <span class="arch-icon">🔧</span>
+            <span class="arch-icon">&#x1F527;</span>
             <span class="arch-title">KVS Engine</span>
             <span class="arch-badge badge-${kvs.isKvs ? 'ok' : 'warn'}">${kvs.isKvs ? 'Detected' : 'Unlikely'} (${Math.round(kvs.confidence * 100)}%)</span>
           </div>
@@ -1190,13 +1190,13 @@
     // ── Protection ──
     blocks.push(`
       <div class="arch-block">
-        <div class="arch-header"><span class="arch-icon">🛡️</span><span class="arch-title">Защита</span></div>
+        <div class="arch-header"><span class="arch-icon">&#x1F6E1;&#xFE0F;</span><span class="arch-title">Защита</span></div>
         <div class="kvs-markers">
           <span class="kvs-marker ${data.PROTECTION?.cloudflare ? 'on err' : 'off'}">Cloudflare</span>
           <span class="kvs-marker ${data.PROTECTION?.ageGate ? 'on' : 'off'}">Age Gate</span>
           <span class="kvs-marker ${data.PROTECTION?.refererProtected ? 'on' : 'off'}">Referer Lock</span>
         </div>
-        ${data.PROTECTION?.cloudflare ? `<div class="hint-block error">⚠️ JS Challenge: парсинг невозможен без headless браузера</div>` : ''}
+        ${data.PROTECTION?.cloudflare ? `<div class="hint-block error">&#x26A0;&#xFE0F; JS Challenge: парсинг невозможен без headless браузера</div>` : ''}
       </div>`);
 
     // ── Worker Verdict ──
@@ -1204,11 +1204,11 @@
     blocks.push(`
       <div class="arch-block">
         <div class="arch-header">
-          <span class="arch-icon">⚖️</span>
+          <span class="arch-icon">&#x2696;&#xFE0F;</span>
           <span class="arch-title">Worker Verdict</span>
           <span class="arch-badge badge-${vrd?.required ? (vrd.mode === 'impossible' ? 'err' : 'warn') : 'ok'}">${vrd?.mode || 'none'}</span>
         </div>
-        <div class="kv-grid">${_kv('Нужен Worker', vrd?.required ? '✅ Да' : '❌ Нет')}</div>
+        <div class="kv-grid">${_kv('Нужен Worker', vrd?.required ? '&#x2705; Да' : '&#x274C; Нет')}</div>
         ${vrd?.reasons?.length ? `<ul class="verdict-reasons">${vrd.reasons.map(r => `<li>${_esc(r)}</li>`).join('')}</ul>` : ''}
         <div class="verdict-summary">${_esc(vrd?.summary || '')}</div>
       </div>`);
@@ -1217,7 +1217,7 @@
     if (data.MIRRORS?.totalFound) {
       blocks.push(`
         <div class="arch-block">
-          <div class="arch-header"><span class="arch-icon">🪞</span><span class="arch-title">Зеркала (${data.MIRRORS.totalFound})</span></div>
+          <div class="arch-header"><span class="arch-icon">&#x1FA9E;</span><span class="arch-title">Зеркала (${data.MIRRORS.totalFound})</span></div>
           <div class="cat-list">${data.MIRRORS.mirrors.map(m => `<span class="cat-tag">${_esc(m)}</span>`).join('')}</div>
         </div>`);
     }
@@ -1225,7 +1225,7 @@
     // ── Summary ──
     blocks.push(`
       <div class="arch-block arch-summary">
-        <div class="arch-header"><span class="arch-icon">📊</span><span class="arch-title">Итог</span></div>
+        <div class="arch-header"><span class="arch-icon">&#x1F4CA;</span><span class="arch-title">Итог</span></div>
         <table class="summary-table">
           <tr><td>HOST</td><td><code>${_esc(data.HOST)}</code></td></tr>
           <tr><td>NAME</td><td><code>${_esc(data.NAME)}</code></td></tr>
@@ -1233,12 +1233,12 @@
           <tr><td>Карточек</td><td>${data.CARD.totalFound}</td></tr>
           <tr><td>Категорий</td><td>${data.CATEGORIES.length}</td></tr>
           <tr><td>Стратегий confirmed</td><td>${data.strategySummary?.confirmed || 0}</td></tr>
-          <tr><td>KVS</td><td>${data.KVS_ENGINE?.isKvs ? '✅' : '—'}</td></tr>
-          <tr><td>Worker needed</td><td>${data.WORKER_VERDICT?.required ? '✅ ' + data.WORKER_VERDICT.mode : '—'}</td></tr>
+          <tr><td>KVS</td><td>${data.KVS_ENGINE?.isKvs ? '&#x2705;' : '—'}</td></tr>
+          <tr><td>Worker needed</td><td>${data.WORKER_VERDICT?.required ? '&#x2705; ' + data.WORKER_VERDICT.mode : '—'}</td></tr>
         </table>
         <div class="fixture-bar">
-          <button onclick="SiteAnalyzer.saveFixture()" class="btn-sm">💾 Сохранить фикстуру</button>
-          <button onclick="SiteAnalyzer.exportFixtures()" class="btn-sm">📤 Экспорт fixtures.json</button>
+          <button onclick="SiteAnalyzer.saveFixture()" class="btn-sm">&#x1F4BE; Сохранить фикстуру</button>
+          <button onclick="SiteAnalyzer.exportFixtures()" class="btn-sm">&#x1F4E4; Экспорт fixtures.json</button>
           <span class="fixture-count">Фикстур: <b id="fixtureCount">0</b></span>
         </div>
       </div>`);
@@ -1255,9 +1255,9 @@
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // FIXTURE REPORTER
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   let _lastAnalysis = null;
   let _lastRawHtml = null;
 
@@ -1282,7 +1282,7 @@
     all.push(fix);
     localStorage.setItem('analyzer_fixtures', JSON.stringify(all.slice(-100)));
     document.getElementById('fixtureCount').textContent = all.length;
-    _showToast('💾 Фикстура сохранена');
+    _showToast('Фикстура сохранена');
   }
 
   function exportFixtures() {
@@ -1321,9 +1321,9 @@
     document.getElementById('btnAnalyze')?.click();
   }
 
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   // EXPORT
-  // ═══════════════════════════════════════════════════════════════
+  // ===============================================================
   global.SiteAnalyzer = {
     analyze,
     genArch,
