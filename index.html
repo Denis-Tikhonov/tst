@@ -199,11 +199,11 @@ async function testWorker() {
       st.textContent = '✅ Работает';
       st.style.color = 'var(--ok)';
     } else {
-      st.textContent = `❌ HTTP ${r.status}`;
+      st.textContent = `[ERR] HTTP ${r.status}`;
       st.style.color = 'var(--err)';
     }
   } catch (e) {
-    st.textContent = `❌ ${e.message}`;
+    st.textContent = `[ERR] ${e.message}`;
     st.style.color = 'var(--err)';
   }
 }
