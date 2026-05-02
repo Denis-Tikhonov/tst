@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Structure Analyzer v7</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="bg-grid"></div>
+
+<div class="app">
+
+  <!-- ── Header ── -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="logo-icon">⬡</span>
+      <div>
+        <h1 class="app-title">Site Analyzer</h1>
+        <span class="app-ver">v7.0.0 · Phase 1</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="cors-indicator" id="corsIndicator">⬤ Ready</span>
+    </div>
+  </header>
+
+  <!-- ── Worker Config ── -->
+  <details class="worker-block" id="workerBlock">
+    <summary class="worker-summary">
+      <span>⚙️ Worker / Proxy настройки</span>
+      <span class="worker-status" id="workerStatus">не проверен</span>
+    </summary>
+    <div class="worker-body">
+      <div class="worker-row">
+        <label class="field-label">Worker URL</label>
+        <input id="workerUrl" class="field-input" placeholder="https://yourproxy.workers.dev" value="">
+        <button class="btn-ghost" onclick="testWorker()">🔌 Проверить</button>
+      </div>
+      <div class="worker-row">
+        <label class="field-label">Транспорт</label>
+        <select id="transportMode" class="field-select">
+          <option value="auto">🔄 Auto (direct → Worker → proxy)</option>
+          <option value="">⚡ Direct only</option>
+          <option value="direct-test">🧪 Direct (без cookies)</option>
+        </select>
+      </div>
+      <p class="worker-hint">GitHub Pages требует Worker или публичный прокси из-за CORS.</p>
+    </div>
+  </details>
+
+  <!-- ── Input Section ── -->
+  <div class="input-section">
+    <div class="input-group">
+      <label class="field-label">📋 URL каталога <span class="req">*</span></label>
+      <input id="mainUrl" class="field-input field-main"
+             placeholder="https://site.com/videos/"
+             autocomplete="off" spellcheck="false">
+    </div>
+    <div class="input-group">
+      <label class="field-label">🎬 URL видео-страницы <span class="opt">(опционально — для анализа стратегий)</span></label>
+      <input id="videoUrl" class="field-input"
+             placeholder="https://site.com/video/12345/"
+             autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+
+  <!-- ── Buttons ── -->
+  <div class="btn-row">
+    <button class="btn-primary" id="btnAnalyze" onclick="runAnalyze()">
+      <span class="btn-icon">🚀</span> Анализировать
+    </button>
+    <button class="btn-ghost" id="btnGenerate" disabled onclick="runGenerate()">
+      <span class="btn-icon">⚙️</span> Генерировать парсер
+    </button>
+    <button class="btn-ghost" id="btnCopyJson" disabled onclick="copyJson()">
+      <span class="btn-icon">📋</span> Копировать JSON
+    </button>
+    <button class="btn-ghost" id="btnCancel" disabled onclick="cancelAnalyze()">
+      <span class="btn-icon">✕</span> Стоп
+    </button>
+  </div>
+
+  <!-- ── Progress ── -->
+  <div class="progress-wrap" id="progressWrap" hidden>
+    <div class="progress-bar-outer">
+      <div class="progress-bar-inner" id="progressBar"></div>
+    </div>
+    <span class="progress-label" id="progressLabel">Загрузка...</span>
+  </div>
+
+  <!-- ── Error Banner ── -->
+  <div class="error-banner" id="errorBanner" hidden>
+    <span class="error-icon">⚠️</span>
+    <span id="errorText"></span>
+    <button class="error-close" onclick="document.getElementById('errorBanner').hidden=true">✕</button>
+  </div>
+
+  <!-- ── Results ── -->
+  <div class="results-wrap" id="resultsWrap" hidden>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="arch" onclick="switchTab(this,'arch')">🏗️ Архитектура</button>
+      <button class="tab" data-tab="json" onclick="switchTab(this,'json')">{ } JSON</button>
+      <button class="tab" data-tab="raw"  onclick="switchTab(this,'raw')">⟨/⟩ Raw HTML</button>
+    </div>
+
+    <!-- Tab: Architecture -->
+    <div class="tab-pane active" id="tab-arch">
+      <div id="archContent"></div>
+    </div>
+
+    <!-- Tab: JSON -->
+    <div class="tab-pane" id="tab-json">
+      <div class="json-toolbar">
+        <button class="btn-ghost btn-xs" onclick="copyJson()">📋 Копировать</button>
+        <button class="btn-ghost btn-xs" onclick="downloadJson()">⬇️ Скачать JSON</button>
+        <label class="json-search-wrap">
+          <input id="jsonSearch" class="json-search" placeholder="Поиск..." oninput="filterJson(this.value)">
+        </label>
+      </div>
+      <pre id="jsonContent" class="json-pre"></pre>
+    </div>
+
+    <!-- Tab: Raw HTML -->
+    <div class="tab-pane" id="tab-raw">
+      <div class="raw-toolbar">
+        <button class="btn-ghost btn-xs" onclick="copyRaw()">📋 Копировать</button>
+        <span class="raw-size" id="rawSize"></span>
+      </div>
+      <pre id="rawContent" class="raw-pre"></pre>
+    </div>
+
+  </div><!-- /results-wrap -->
+
+  <!-- ── In-app Notifications ── -->
+  <div id="notifications"></div>
+
+</div><!-- /app -->
+
+<!-- Toast container -->
+<div id="toastContainer"></div>
+
+<script src="parser.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// APP CONTROLLER
+// ═══════════════════════════════════════════════════════════════
+let _currentData  = null;
+let _currentHtml  = null;
+let _abortCtrl    = null;
+
+// ── Tab switching ──
+function switchTab(btn, name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Progress ──
+function setProgress(pct, label) {
+  const wrap  = document.getElementById('progressWrap');
+  const bar   = document.getElementById('progressBar');
+  const lbl   = document.getElementById('progressLabel');
+  wrap.hidden = false;
+  bar.style.width = pct + '%';
+  if (label) lbl.textContent = label;
+}
+
+function hideProgress() {
+  document.getElementById('progressWrap').hidden = true;
+}
+
+// ── Error ──
+function showError(msg) {
+  const b = document.getElementById('errorBanner');
+  document.getElementById('errorText').textContent = msg;
+  b.hidden = false;
+}
+
+function hideError() {
+  document.getElementById('errorBanner').hidden = true;
+}
+
+// ── Worker test ──
+async function testWorker() {
+  const url = document.getElementById('workerUrl').value.trim();
+  const st  = document.getElementById('workerStatus');
+  if (!url) { st.textContent = '⚠️ URL не указан'; return; }
+  st.textContent = '🔄 Проверка...';
+  try {
+    const r = await fetch(`${url}?url=https://httpbin.org/get`, { signal: AbortSignal.timeout(8000) });
+    if (r.ok) {
+      st.textContent = '✅ Работает';
+      st.style.color = 'var(--ok)';
+    } else {
+      st.textContent = `❌ HTTP ${r.status}`;
+      st.style.color = 'var(--err)';
+    }
+  } catch (e) {
+    st.textContent = `❌ ${e.message}`;
+    st.style.color = 'var(--err)';
+  }
+}
+
+// ── Main analyze ──
+async function runAnalyze() {
+  hideError();
+  const catUrl = document.getElementById('mainUrl').value.trim();
+  const vidUrl = document.getElementById('videoUrl').value.trim();
+
+  if (!catUrl) { showError('Введите URL каталога'); return; }
+
+  // Validate URL
+  try { new URL(catUrl); } catch { showError('Некорректный URL каталога'); return; }
+  if (vidUrl) { try { new URL(vidUrl); } catch { showError('Некорректный URL видео'); return; } }
+
+  // UI state
+  _abortCtrl = new AbortController();
+  document.getElementById('btnAnalyze').disabled = true;
+  document.getElementById('btnCancel').disabled  = false;
+  document.getElementById('btnGenerate').disabled = true;
+  document.getElementById('btnCopyJson').disabled = true;
+  document.getElementById('resultsWrap').hidden   = true;
+
+  setProgress(5, 'Инициализация...');
+
+  try {
+    const data = await SiteAnalyzer.analyze(catUrl, vidUrl || null, {
+      onProgress: (pct, label) => setProgress(pct, label),
+    });
+
+    _currentData = data;
+    SiteAnalyzer._setLastAnalysis(data, _currentHtml);
+
+    // Render arch tab
+    document.getElementById('archContent').innerHTML = SiteAnalyzer.genArch(data);
+
+    // Render JSON tab
+    const jsonStr = JSON.stringify(data, null, 2);
+    document.getElementById('jsonContent').textContent = jsonStr;
+
+    // Update fixture count
+    const fc = document.getElementById('fixtureCount');
+    if (fc) {
+      try { fc.textContent = JSON.parse(localStorage.getItem('analyzer_fixtures') || '[]').length; } catch {}
+    }
+
+    // Show results
+    document.getElementById('resultsWrap').hidden = false;
+    document.getElementById('btnGenerate').disabled = false;
+    document.getElementById('btnCopyJson').disabled = false;
+
+    // Show generate notification if UNIVERSAL_TEMPLATE loaded
+    if (window.UNIVERSAL_TEMPLATE) {
+      showInAppNote('✅ Анализ завершён', 'Парсер можно сгенерировать', 'ok');
+    } else {
+      showInAppNote('✅ Анализ завершён', 'Подключите UNIVERSAL_TEMPLATE.js для генерации парсера', 'warn');
+    }
+
+    hideProgress();
+
+  } catch (e) {
+    hideProgress();
+    showError(`Ошибка анализа: ${e.message}`);
+    console.error('[Analyzer]', e);
+  } finally {
+    document.getElementById('btnAnalyze').disabled = false;
+    document.getElementById('btnCancel').disabled  = true;
+  }
+}
+
+function cancelAnalyze() {
+  _abortCtrl?.abort();
+  hideProgress();
+  document.getElementById('btnAnalyze').disabled = false;
+  document.getElementById('btnCancel').disabled  = true;
+}
+
+// ── Generator bridge ──
+function runGenerate() {
+  if (!_currentData) return;
+  if (!window.UNIVERSAL_TEMPLATE) {
+    showError('UNIVERSAL_TEMPLATE.js не подключён. Добавьте <script src="UNIVERSAL_TEMPLATE.js"> в index.html');
+    return;
+  }
+  if (!window.Generator) {
+    showError('generator.js не подключён (Фаза 2).');
+    return;
+  }
+  try {
+    const result = window.Generator.generate(_currentData);
+    const blob = new Blob([result.code], { type: 'text/javascript' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${_currentData.NAME}_parser.js`;
+    a.click();
+    showInAppNote('⚙️ Парсер сгенерирован', `Стратегии: ${result.meta.activeStrategies.join(', ')}`, 'ok');
+  } catch (e) {
+    showError(`Ошибка генерации: ${e.message}`);
+  }
+}
+
+// ── JSON helpers ──
+function copyJson() {
+  if (!_currentData) return;
+  navigator.clipboard.writeText(JSON.stringify(_currentData, null, 2))
+    .then(() => toast('📋 JSON скопирован'))
+    .catch(() => toast('❌ Не удалось скопировать'));
+}
+
+function downloadJson() {
+  if (!_currentData) return;
+  const blob = new Blob([JSON.stringify(_currentData, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${_currentData.NAME || 'analysis'}_v7.json`;
+  a.click();
+}
+
+function copyRaw() {
+  if (!_currentHtml) return;
+  navigator.clipboard.writeText(_currentHtml).then(() => toast('📋 HTML скопирован'));
+}
+
+function filterJson(q) {
+  const pre  = document.getElementById('jsonContent');
+  const full = JSON.stringify(_currentData, null, 2);
+  if (!q) { pre.textContent = full; return; }
+  const lines = full.split('\n').filter(l => l.toLowerCase().includes(q.toLowerCase()));
+  pre.textContent = lines.join('\n') || '— нет совпадений';
+}
+
+// ── Fixture helpers ──
+function saveFixture() { SiteAnalyzer.saveFixture(); }
+function exportFixtures() { SiteAnalyzer.exportFixtures(); }
+
+// ── In-app notification ──
+function showInAppNote(title, body, type = 'ok') {
+  const container = document.getElementById('notifications');
+  const el = document.createElement('div');
+  el.className = `notif notif-${type}`;
+  el.innerHTML = `
+    <strong>${title}</strong>
+    <span>${body}</span>
+    <button class="notif-close" onclick="this.parentElement.remove()">✕</button>
+  `;
+  container.appendChild(el);
+  setTimeout(() => el?.remove(), 6000);
+}
+
+// ── Toast ──
+function toast(msg) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+// ── Keyboard shortcut ──
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runAnalyze();
+});
+
+// ── Init fixture count ──
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    const count = JSON.parse(localStorage.getItem('analyzer_fixtures') || '[]').length;
+    const fc = document.getElementById('fixtureCount');
+    if (fc) fc.textContent = count;
+  } catch {}
+});
+</script>
+
+</body>
+</html>
