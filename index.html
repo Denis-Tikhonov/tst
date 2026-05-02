@@ -194,7 +194,7 @@ async function testWorker() {
   if (!url) { st.textContent = '⚠️ URL не указан'; return; }
   st.textContent = '🔄 Проверка...';
   try {
-    const r = await fetch(`${url}?url=https://denis-tikhonov.github.io/`, { signal: AbortSignal.timeout(8000) });
+    const r = await fetch(`${url}?url=https://denis-tikhonov.github.io/tst/`, { signal: AbortSignal.timeout(8000) });
     if (r.ok) {
       st.textContent = '✅ Работает';
       st.style.color = 'var(--ok)';
